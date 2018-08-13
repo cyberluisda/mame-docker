@@ -31,27 +31,38 @@ RUN curl \
 
 
 # Build and install
-# TODO mix in one command only when debug was finished
 RUN cd /build \
-    && make
-RUN make install \
-    && cd 
+    && make \
+        NOWERROR=1 \
+        TOOLS=1 \
+        -j5
+RUN mkdir -p /opt/mame \
+    && find /build -maxdepth 1 -perm -111 -type f -exec cp -v {} /opt/mame \; \
+    && rm -fr /build \
+    && ls /opt/mame/* | xargs ldd > /opt/mame/libs_required
 
-# Clean
-# TODO uncomment when debug was finished
-# RUN rm -fr /build
-
-# Remove build packages
+# Remove build packages.
 RUN dpkg --get-selections \ 
-        | fgrep -v deinstall > /opt/tmp/pkg_new \
-    && comm -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
+        | fgrep -v deinstall | sort > /opt/tmp/pkg_new \
+    && comm -2 -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
         | cut -f 1 \
-        | xargs apt-get purge \
-    && apt-get clean \
+        | xargs apt-get -y --allow-remove-essential purge \
+    && apt-get -y --allow-remove-essential clean \
     && rm -rf \
        /var/lib/apt/lists/* \
        /opt/tmp
 
-ENTRYPOINT /usr/game/mame
+# Install mandatory libraries
+## TODO mix with previous step
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libsdl2-2.0-0 \
+        libgl1-mesa-glx \
+        libqtgui4 \
+        libsdl2-ttf-2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+    
+
+ENTRYPOINT /opt/mame/mame64
 WORKDIR /roms
 
