@@ -3,7 +3,7 @@
 ##
 # Example to build
 #
-# docer build --tag mame:0.183 .
+# docker build --tag mame:0.183 .
 ##
 # Example to run
 # 
@@ -26,33 +26,36 @@ RUN curl \
         -o /tmp/mame${MAME_VERSION}s.zip \
         https://github.com/mamedev/mame/releases/download/mame${MAME_VERSION}/mame${MAME_VERSION}s.zip \
     && unzip /tmp/mame${MAME_VERSION}s.zip -d /tmp \
-    && unzip /tmp/mame.zip -d /build
-# Separate from previous to prevent error when build docker
-RUN rm -f /tmp/mame${MAME_VERSION}s.zip /tmp/mame.zip
-
+    && unzip /tmp/mame.zip -d /build -x '3rdparty/pugixml/tests/data/*.xml' \
+    && rm -f /tmp/mame${MAME_VERSION}s.zip /tmp/mame.zip
+# Excluding strange file names from '3rdparty/pugixml/tests/data/*.xml'
 
 # Build and install
 # TODO mix in one command only when debug was finished
 RUN cd /build \
-    && make
-RUN make install \
-    && cd 
+    && QT_SELECT=qt5 make \
+        NOWERROR=1 \
+        TOOLS=1 \
+        -j5
+RUN mkdir -p /opt/mame \
+    && find /build -maxdepth 1 -perm -111 -type f -exec cp -v {} /opt/mame \; \
+    && rm -fr /build
 
-# Clean
-# TODO uncomment when debug was finished
-# RUN rm -fr /build
 
 # Remove build packages
 RUN dpkg --get-selections \ 
         | fgrep -v deinstall > /opt/tmp/pkg_new \
-    && comm -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
+    && comm -2 -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
         | cut -f 1 \
-        | xargs apt-get purge \
-    && apt-get clean \
+        | xargs apt-get -y --allow-remove-essential purge \
+    && apt-get -y --allow-remove-essential clean \
     && rm -rf \
        /var/lib/apt/lists/* \
        /opt/tmp
 
-ENTRYPOINT /usr/game/mame
+# Install mandatory libraries
+## TODO 
+
+ENTRYPOINT /opt/mame/mame64
 WORKDIR /roms
 
