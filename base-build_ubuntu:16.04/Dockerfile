@@ -14,7 +14,7 @@ LABEL maintainer="Luis David Barrios <cyberluisda@gmail.com>"
 RUN mkdir -p roms /build /opt/tmp
 
 # Get current list of installed packages
-RUN dpkg --get-selections | fgrep -v deinstall > /opt/tmp/pkg_installed
+RUN dpkg --get-selections | fgrep -v deinstall | sort > /opt/tmp/pkg_installed
 
 # Install build tools (FIXME: to one RUN when dev finished)
 RUN apt-get update \
