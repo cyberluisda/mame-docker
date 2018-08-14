@@ -11,25 +11,24 @@ LABEL maintainer="Luis David Barrios <cyberluisda@gmail.com>"
 ###
 
 # Paths
-RUN mkdir -p roms /build /opt/tmp
+RUN mkdir -p /roms /build /opt/tmp /mame
 
 # Get current list of installed packages
 RUN dpkg --get-selections | fgrep -v deinstall | sort > /opt/tmp/pkg_installed
 
+ENV PKG_CONFIG_PATH /usr/lib/x86_64-linux-gnu/pkgconfig/:$PKG_CONFIG_PATH
+
 # Install build tools (FIXME: to one RUN when dev finished)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
-        gconf2 \
-        libgconf2-dev \
+      build-essential \
+      gconf2 \
+      libgconf2-dev \
     	pkg-config \
     	libgtk2.0-dev \
-        libqt4-dev \
+      libqt4-dev \
     	libsdl2-dev \
-        libsdl2-ttf-dev \
-        coreutils \
-        unzip \
-        curl
-
-
-
+      libsdl2-ttf-dev \
+      coreutils \
+      unzip \
+      curl
