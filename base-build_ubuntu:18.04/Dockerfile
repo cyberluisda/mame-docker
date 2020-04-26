@@ -18,6 +18,7 @@ RUN mkdir -p /roms /build /opt/tmp /mame
 RUN dpkg --get-selections | fgrep -v deinstall | sort > /opt/tmp/pkg_installed
 
 # Install build tools (FIXME: to one RUN when dev finished)
+# ruby, ruby-dev and rubygems only required for fpm
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
       build-essential \
@@ -28,5 +29,10 @@ RUN apt-get update \
       libsdl2-ttf-dev \
       coreutils \
       unzip \
-      curl
+      curl \
+      ruby \
+      ruby-dev \
+      rubygems
+# Install fpm only for package
+RUN gem install --no-document fpm
 ENV PKG_CONFIG_PATH /usr/lib/x86_64-linux-gnu/pkgconfig/:$PKG_CONFIG_PATH
