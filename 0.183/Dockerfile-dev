@@ -1,5 +1,5 @@
 ##
-# Require base version build from ../base-build:16.04
+# Require base version build from ../base-build:18.04
 ##
 # Example to build
 #
@@ -7,7 +7,7 @@
 ##
 # Example to run
 #
-# docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix  -v /YOUR_LOCAL_ROOMS_PATH:/roms mame:0.161 -rp /roms
+# docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix  -v /YOUR_LOCAL_ROOMS_PATH:/roms mame:0.183-dev
 ##
 # If you have X11 display errors like:
 #
@@ -48,7 +48,7 @@ RUN dpkg --get-selections \
   && comm -2 -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
     | cut -f 1 \
     | xargs apt-get -y --allow-remove-essential purge \
-  && apt-get -y --allow-remove-essential clean
+  && apt-get -y --allow-remove-essential clean \
   && apt-get install -y --no-install-recommends \
     libsdl2-2.0-0 \
     libgl1-mesa-glx \
