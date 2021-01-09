@@ -14,7 +14,6 @@
 FROM mame-base-build:18.04
 
 ENV MAME_VERSION=0220
-ENV MAME_PKG_VERSION=0.220
 
 # Download mame source code
 RUN curl \
