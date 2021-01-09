@@ -1,0 +1,72 @@
+##
+# Require base version build from ../base-build:18.04
+##
+# Example to build
+#
+# docker build --tag mame-pkg:0.220-dev -f Dockerfile-dev .
+##
+# Example to extract pakage
+#
+# docker run --rm -it -u $(id -u) -v $PWD:/out mame-pkg:0.220-dev
+#
+# Then you can remove image
+##
+FROM mame-base-build:18.04
+
+ENV MAME_VERSION=0220
+
+# Download mame source code
+RUN curl \
+    -ksL \
+    -o /tmp/mame${MAME_VERSION}s.zip \
+    https://github.com/mamedev/mame/archive/mame${MAME_VERSION}.zip \
+  && unzip /tmp/mame${MAME_VERSION}s.zip -d /tmp \
+  && mv /tmp/mame-mame${MAME_VERSION} /build \
+  && rm -f /build/3rdparty/pugixml/tests/data/*.xml /tmp/mame${MAME_VERSION}s.zip
+# Excluding strange file names from '3rdparty/pugixml/tests/data/*.xml'
+
+# Build and install
+RUN cd /build/mame-mame${MAME_VERSION} \
+  && QT_SELECT=qt5 make \
+    NOWERROR=1 \
+    TOOLS=1 \
+    -j5
+RUN mkdir -p /fake-root/usr/local/bin \
+  && find /build/mame-mame${MAME_VERSION} -maxdepth 1 -perm -111 -type f -exec cp -v {} /fake-root/usr/local/bin \; \
+  && rm -fr /build \
+  && mv /fake-root/usr/local/bin/split /fake-root/usr/local/bin/mame-split
+
+
+# Remove dev libraries and install mandatory
+# Commented because in docker we do not liberate space, because previous layer
+# include it yet. Only for reference pourpuses
+RUN \
+#   dpkg --get-selections \
+#     | fgrep -v deinstall | sort > /opt/tmp/pkg_new \
+#   && comm -2 -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
+#     | cut -f 1 \
+#     | xargs apt-get -y --allow-remove-essential purge \
+#   && apt-get -y --allow-remove-essential clean \
+#   && \
+  apt-get install -y --no-install-recommends \
+    libsdl2-2.0-0 \
+    libgl1-mesa-glx \
+    libqt5widgets5 \
+    libsdl2-ttf-2.0-0
+
+# Package file
+RUN mkdir -p /build \
+  && fpm -s dir -t deb -n mame -v ${MAME_VERSION} -C /fake-root\
+    -p mame_VERSION_ARCH.deb \
+    -d "libsdl2-2.0-0 >= 2.0" \
+    -d "libgl1-mesa-glx >= 18.0" \
+    -d "libqt5widgets5 >= 5.9" \
+    -d "libsdl2-ttf-2.0-0 >= 2.0" \
+    . \
+  && mv mame*deb /build
+
+
+# Output path
+# RUN mkdir -p /out
+
+CMD [ "/bin/bash", "-c", "cp /build/mame*deb /out" ]
