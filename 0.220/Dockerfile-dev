@@ -14,6 +14,7 @@
 FROM mame-base-build:18.04
 
 ENV MAME_VERSION=0220
+ENV MAME_VERSION_PKG=0.220
 
 # Download mame source code
 RUN curl \
@@ -54,7 +55,7 @@ RUN mkdir -p /fake-root/usr/local/bin \
 
 # Package file
 RUN mkdir -p /build \
-  && fpm -s dir -t deb -n mame -v ${MAME_VERSION} -C /fake-root\
+  && fpm -s dir -t deb -n mame -v ${MAME_VERSION_PKG} -C /fake-root\
     -p mame_VERSION_ARCH.deb \
     -d "libsdl2-2.0-0 >= 2.0" \
     -d "libgl1-mesa-glx >= 18.0" \
