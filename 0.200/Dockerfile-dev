@@ -1,5 +1,5 @@
 ##
-# Require base version build from ../base-build:16.04
+# Require base version build from ../base-build:18.04
 ##
 # Example to build
 #
@@ -15,45 +15,63 @@
 #
 # Run `xhost +` in your host to enable acces to X11 from other than localhost.
 ##
+# Example to extract deb package (in /tmp)
+#
+# docker run --rm -it -v /tmp:/host mame:0.200-dev  /bin/bash -c "cp /build-deb/mame*deb /host/"
+##
 FROM mame-base-build:18.04
 
 ENV MAME_VERSION=0200
+ENV MAME_PKG_VERSION=0.200
 
 # Download mame source code
 RUN curl \
     -ksL \
     -o /tmp/mame${MAME_VERSION}s.zip \
-    https://github.com/mamedev/mame/releases/download/mame${MAME_VERSION}/mame${MAME_VERSION}s.zip \
+    https://github.com/mamedev/mame/archive/mame${MAME_VERSION}.zip \
   && unzip /tmp/mame${MAME_VERSION}s.zip -d /tmp \
-  && unzip /tmp/mame.zip -d /build -x '3rdparty/pugixml/tests/data/*.xml' \
-  && rm -f /tmp/mame${MAME_VERSION}s.zip /tmp/mame.zip
+  && mv /tmp/mame-mame${MAME_VERSION} /build \
+  && rm -f /build/mame-mame${MAME_VERSION}/3rdparty/pugixml/tests/data/*.xml /tmp/mame${MAME_VERSION}s.zip
 # Excluding strange file names from '3rdparty/pugixml/tests/data/*.xml'
 
 # Build and install
-RUN cd /build \
+RUN cd /build/mame-mame${MAME_VERSION} \
   && QT_SELECT=qt5 make \
     NOWERROR=1 \
     TOOLS=1 \
     -j5
 RUN mkdir -p /opt/mame \
-  && find /build -maxdepth 1 -perm -111 -type f -exec cp -v {} /opt/mame \; \
-  && rm -fr /build
+  && find /build/mame-mame${MAME_VERSION} -maxdepth 1 -perm -111 -type f -exec cp -v {} /opt/mame \;
 
 
 # Remove dev libraries and install mandatory
 # Commented because in docker we do not liberate space, because previous layer
 # include it yet. Only for reference pourpuses
-RUN dpkg --get-selections \
-    | fgrep -v deinstall | sort > /opt/tmp/pkg_new \
-  && comm -2 -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
-    | cut -f 1 \
-    | xargs apt-get -y --allow-remove-essential purge \
-  && apt-get -y --allow-remove-essential clean \
-  && apt-get install -y --no-install-recommends \
-    libsdl2-2.0-0 \
-    libgl1-mesa-glx \
-    libqt5widgets5 \
-    libsdl2-ttf-2.0-0
+# RUN dpkg --get-selections \
+#     | fgrep -v deinstall | sort > /opt/tmp/pkg_new \
+#   && comm -2 -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
+#     | cut -f 1 \
+#     | xargs apt-get -y --allow-remove-essential purge \
+#   && apt-get -y --allow-remove-essential clean \
+#   && apt-get install -y --no-install-recommends \
+#     libsdl2-2.0-0 \
+#     libgl1-mesa-glx \
+#     libqt5widgets5 \
+#     libsdl2-ttf-2.0-0
+
+# Package file
+RUN mkdir -p /build-deb/usr/local/bin \
+  && cp -rp /opt/mame/* /build-deb/usr/local/bin \
+  && fpm -s dir -t deb -n mame -v ${MAME_PKG_VERSION} -C /build-deb/ \
+    -p mame_VERSION_ARCH.deb \
+    -d "libsdl2-2.0-0 >= 2.0" \
+    -d "libgl1-mesa-glx >= 18.0" \
+    -d "libqt5widgets5 >= 5.9" \
+    -d "libsdl2-ttf-2.0-0 >= 2.0" \
+    usr/local/bin \
+  && rm -fr /build-deb/usr \
+  && mv mame*deb /build-deb
+
 
 # Clean.
 # Similar to previos step, has no sense in multi-layer docker

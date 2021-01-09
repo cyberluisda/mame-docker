@@ -36,19 +36,19 @@ RUN dpkg --get-selections | fgrep -v deinstall | sort > /opt/tmp/pkg_installed \
     unzip \
     curl \
   && curl \
-    -ksL \
-    -o /tmp/mame${MAME_VERSION}s.zip \
-    https://github.com/mamedev/mame/archive/mame${MAME_VERSION}.zip \
-  && unzip /tmp/mame${MAME_VERSION}s.zip -d /tmp \
-  && unzip /tmp/mame.zip -d /build -x '3rdparty/pugixml/tests/data/*.xml' \
-  && rm -f /tmp/mame${MAME_VERSION}s.zip /tmp/mame.zip \
-  && cd /build \
+      -ksL \
+      -o /tmp/mame${MAME_VERSION}s.zip \
+      https://github.com/mamedev/mame/archive/mame${MAME_VERSION}.zip \
+    && unzip /tmp/mame${MAME_VERSION}s.zip -d /tmp \
+    && mv /tmp/mame-mame${MAME_VERSION} /build \
+    && rm -f /build/mame-mame${MAME_VERSION}/3rdparty/pugixml/tests/data/*.xml /tmp/mame${MAME_VERSION}s.zip \
+  && cd /build/mame-mame${MAME_VERSION} \
   && QT_SELECT=qt5 make \
     NOWERROR=1 \
     TOOLS=1 \
     -j5 \
   && mkdir -p /opt/mame \
-  && find /build -maxdepth 1 -perm -111 -type f -exec cp -v {} /opt/mame \; \
+  && find /build/mame-mame${MAME_VERSION} -maxdepth 1 -perm -111 -type f -exec cp -v {} /opt/mame \; \
   && rm -fr /build \
   && dpkg --get-selections \
     | fgrep -v deinstall | sort > /opt/tmp/pkg_new \

@@ -14,6 +14,7 @@
 FROM mame-base-build:18.04
 
 ENV MAME_VERSION=0220
+ENV MAME_PKG_VERSION=0.220
 
 # Download mame source code
 RUN curl \
@@ -40,19 +41,17 @@ RUN mkdir -p /fake-root/usr/local/bin \
 # Remove dev libraries and install mandatory
 # Commented because in docker we do not liberate space, because previous layer
 # include it yet. Only for reference pourpuses
-RUN \
-#   dpkg --get-selections \
+# RUN dpkg --get-selections \
 #     | fgrep -v deinstall | sort > /opt/tmp/pkg_new \
 #   && comm -2 -3 /opt/tmp/pkg_new /opt/tmp/pkg_installed \
 #     | cut -f 1 \
 #     | xargs apt-get -y --allow-remove-essential purge \
 #   && apt-get -y --allow-remove-essential clean \
-#   && \
-  apt-get install -y --no-install-recommends \
-    libsdl2-2.0-0 \
-    libgl1-mesa-glx \
-    libqt5widgets5 \
-    libsdl2-ttf-2.0-0
+#   && apt-get install -y --no-install-recommends \
+#     libsdl2-2.0-0 \
+#     libgl1-mesa-glx \
+#     libqt5widgets5 \
+#     libsdl2-ttf-2.0-0
 
 # Package file
 RUN mkdir -p /build \
