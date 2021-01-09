@@ -7,6 +7,8 @@ FROM ubuntu:18.04
 
 LABEL maintainer="Luis David Barrios <cyberluisda@gmail.com>"
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 ###
 # This section can be considered build base
 ###
