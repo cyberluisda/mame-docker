@@ -7,7 +7,7 @@
 ##
 # Example to extract pakage
 #
-# docker run --rm -it -u $(id -u) -v $PWD:/out mame-pkg:0.227-dev-20.04
+# docker run --rm -it -u $(id -u):$(id -g) -v $PWD:/out mame-pkg:0.227-dev-20.04
 #
 # Then you can remove image
 ##
