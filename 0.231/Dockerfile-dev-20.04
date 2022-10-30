@@ -1,0 +1,55 @@
+##
+# Require base version build from ../base-build:20.04
+##
+# Example to build
+#
+# docker build --tag mame-pkg:0.231-dev-20.04 -f Dockerfile-dev-20.04 .
+##
+# Example to extract pakage
+#
+# docker run --rm -it -u $(id -u) -v $PWD:/out mame-pkg:0.231-dev-20.04
+#
+# Then you can remove image
+##
+FROM mame-base-build:20.04
+
+ENV MAME_VERSION=0231
+ENV MAME_VERSION_PKG=0.231
+
+# Download mame source code
+RUN curl \
+    -ksL \
+    -o /tmp/mame${MAME_VERSION}s.zip \
+    https://github.com/mamedev/mame/archive/mame${MAME_VERSION}.zip \
+  && unzip /tmp/mame${MAME_VERSION}s.zip -d /tmp \
+  && mv /tmp/mame-mame${MAME_VERSION} /build \
+  && rm -f /build/3rdparty/pugixml/tests/data/*.xml /tmp/mame${MAME_VERSION}s.zip
+# Excluding strange file names from '3rdparty/pugixml/tests/data/*.xml'
+
+# Build and install
+RUN cd /build/mame-mame${MAME_VERSION} \
+  && QT_SELECT=qt5 make \
+    NOWERROR=1 \
+    TOOLS=1 \
+    -j5
+RUN mkdir -p /fake-root/usr/local/bin \
+  && find /build/mame-mame${MAME_VERSION} -maxdepth 1 -perm -111 -type f -exec cp -v {} /fake-root/usr/local/bin \; \
+  && rm -fr /build \
+  && mv /fake-root/usr/local/bin/split /fake-root/usr/local/bin/mame-split
+
+# Package file
+RUN mkdir -p /build \
+  && fpm -s dir -t deb -n mame -v ${MAME_VERSION_PKG} -C /fake-root\
+    -p mame_VERSION_ARCH.deb \
+    -d "libsdl2-2.0-0 >= 2.0" \
+    -d "libgl1-mesa-glx >= 20.0" \
+    -d "libqt5widgets5 >= 5.12" \
+    -d "libsdl2-ttf-2.0-0 >= 2.0" \
+    . \
+  && mv mame*deb /build
+
+
+# Output path
+# RUN mkdir -p /out
+
+CMD [ "/bin/bash", "-c", "cp /build/mame*deb /out" ]
